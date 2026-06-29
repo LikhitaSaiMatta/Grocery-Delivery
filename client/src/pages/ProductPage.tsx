@@ -3,11 +3,11 @@ import { useCart } from "../context/CartContext";
 import { useEffect, useState } from "react";
 import type { Product } from "../types";
 import { Link } from "react-router-dom"
-import { ArrowLeftIcon, ArrowRightIcon, HomeIcon, LeafIcon, Minus, MinusIcon, Plus, PlusIcon, ShoppingCartIcon, Star, StarIcon, Trash2 } from "lucide-react";
-import { dummyProducts } from "../assets/assets"
+import { ArrowLeftIcon, ArrowRightIcon, HomeIcon, LeafIcon, MinusIcon, PlusIcon, ShoppingCartIcon, StarIcon } from "lucide-react";
 import Loading from "../components/Loading";
 import ProductCard from "../components/ProductCard";
 import DummyReviewsSection from "../assets/DummyReviewsSection";
+import api from "../config/api";
 
 
 const ProductPage = () => {
@@ -26,17 +26,19 @@ const ProductPage = () => {
     setLoading(true)
     setLocalQuantity(1);
     window.scrollTo(0,0)
-    const product = dummyProducts.find((p)=> p._id === id)
-    setProduct(product!)
-    setRelatedProducts(dummyProducts.filter((p)=> p._id !== id))
-    setLoading(false)
 
+    api.get(`/products/${id}`).then(({data})=>{
+      setProduct(data.product);
+      return api.get(`/products?category=${data.product.category}`)
+    }).then(({data})=>{
+      setRelatedProducts(data.products.filter((p: Product) => p.id !== id))
+    }).catch(()=> navigate("/products")).finally(() => setLoading(false))
   },[id, navigate])
 
   if(loading) return <Loading />
   if(!product) return null;
 
-  const cartItem = items.find((item)=> item.product._id === product._id)
+  const cartItem = items.find((item)=> item.product.id === product.id)
   const inCart = !!cartItem;
   const displayQuantity = inCart ? cartItem.quantity : localQuantity
 
@@ -44,15 +46,15 @@ const ProductPage = () => {
 
   const handleMinus = ()=>{
     if(inCart){
-      if(cartItem.quantity > 1) updateQuantity(product._id, cartItem.quantity - 1)
-        else removeFromCart(product._id)
+      if(cartItem.quantity > 1) updateQuantity(product.id, cartItem.quantity - 1)
+        else removeFromCart(product.id)
     }else{
       setLocalQuantity(Math.max(1, localQuantity - 1))
     }
   }
 
   const handlePlus = ()=>{
-    if(inCart) updateQuantity(product._id, cartItem.quantity + 1)
+    if(inCart) updateQuantity(product.id, cartItem.quantity + 1)
       else setLocalQuantity(localQuantity + 1)
   }
 
@@ -80,7 +82,7 @@ const ProductPage = () => {
         {/* Back button */}
         <button onClick={()=> navigate(-1)} className="mb-6 flex
         items-center gap-1.5 text-sm text-app-text-light
-        hover:text-app-green ttransition-colors">
+        hover:text-app-green transition-colors">
           <ArrowLeftIcon className="size-4" /> Back
         </button>
         {/* Product Details Section */}
@@ -149,7 +151,7 @@ const ProductPage = () => {
 
               <div className="mb-6">
                 {product.stock > 0 ? (
-                  <span className="text-sm tex-app-success
+                  <span className="text-sm text-app-success
                   font-medium">✔️ In Stock ({product.stock} available)</span>
                 ) : (
                   <span className="text-sm text-app-error
@@ -183,8 +185,7 @@ const ProductPage = () => {
                 disabled={product.stock === 0}
                 className={`flex-1 py-3 font-semibold rounded-xl transition-colors flex-center
                 gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-                $[inCart ? "bg-app-cream text-app-green border border-app-green" : bg-app-orange
-                text-white hover:bg-app-orange-dark]`}>
+                ${inCart ? "bg-app-cream text-app-green border border-app-green" : "bg-app-orange text-white hover:bg-app-orange-dark"}`}>
                   <ShoppingCartIcon className="w-4 h-4" />
                   {inCart ? "Added to Cart" : "Add to Cart"}
                 </button>
@@ -217,7 +218,7 @@ const ProductPage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3
             lg:grid-cols-5 gap-4 xl:gap-8">
               {relatedProducts.slice(0,5).map((rp)=> (
-                <ProductCard key={rp._id} product={rp}/>
+                <ProductCard key={rp.id} product={rp}/>
               ))}
             </div>
 

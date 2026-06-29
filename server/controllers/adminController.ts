@@ -57,7 +57,7 @@ export const updateDeliveryPartner = async (req: Request, res: Response) => {
     if(name) data.name = name;
     if(phone) data.phone = phone;
     if(vehicleType) data.vehicleType = vehicleType;
-    if(isActive) data.isActive = isActive;
+    data.isActive = isActive;
 
     try {
         const partner = await prisma.deliveryPartner.update({
@@ -75,7 +75,7 @@ export const assignDeliveryPartner = async (req: Request, res: Response) => {
     const { partnerId } = req.body;
 
     const order = await prisma.order.findUnique({
-        where: {id: req.params.ida as string}
+        where: {id: req.params.id as string}
     })
 
     const partner = await prisma.deliveryPartner.findUnique({
@@ -88,7 +88,8 @@ export const assignDeliveryPartner = async (req: Request, res: Response) => {
 
     const history: any[] = Array.isArray(order!.statusHistory) ? order!.statusHistory : [];
 
-    if(order!.status === "Placed" || order!.status === "confirmed"){
+    const currentStatus = order!.status.toLowerCase();
+    if(currentStatus === "placed" || currentStatus === "confirmed"){
         status = "Assigned";
         history.push({
             status: "Assigned",
@@ -96,10 +97,10 @@ export const assignDeliveryPartner = async (req: Request, res: Response) => {
         })
     }
 
-    await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
         where: {id: order!.id},
         data: {deliveryPartnerId: partner!.id, deliveryOtp: otp, status, statusHistory: history}
     })
 
-    res.json({order})
+    res.json({order: updatedOrder})
 }

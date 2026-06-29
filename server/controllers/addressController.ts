@@ -53,7 +53,7 @@ export const addAddress = async (req: Request, res: Response)=> {
         where: {userId: req.user!.id},
         orderBy: {createdAt: "asc"}
     })
-    res.status(201).json({addAddress})
+    res.status(201).json({addresses})
 }
 
 
@@ -79,7 +79,7 @@ export const updateAddress = async (req: Request, res: Response)=> {
     if(address) data.address = address;
     if(city) data.city = city;
     if(state) data.state = state;
-    if(zip) data.state = zip;
+    if(zip) data.zip = zip;
     if(isDefault !== undefined) data.isDefault = isDefault;
     if(lat !== null) data.lat = Number(lat);
     if(lng !== null) data.lng = Number(lng);

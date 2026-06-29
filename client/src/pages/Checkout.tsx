@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router-dom"
 import { useCart } from "../context/CartContext";
-import { useState } from "react";
-import { dummyAddressData } from "../assets/assets";
+import { useState, useEffect } from "react";
 import type { Address } from "../types";
 import { ArrowLeft, CheckIcon, ChevronRightIcon, CreditCardIcon, MapPinIcon } from "lucide-react";
 import CheckoutAddress from "../components/Checkout/CheckoutAddress";
 import CheckoutPayment from "../components/Checkout/CheckoutPayment";
 import CheckoutReview from "../components/Checkout/CheckoutReview";
+import api from "../config/api";
+import toast from "react-hot-toast";
+import { useAuth } from "../context/authContext";
 
 
 const Checkout = () => {
@@ -14,14 +16,14 @@ const Checkout = () => {
   const navigate = useNavigate()
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
 
-  const {items, cartTotal} = useCart()
-  const {user} = {user: {addresses: dummyAddressData}}
+  const {items, cartTotal, clearCart} = useCart()
+  const {user} = useAuth()
 
   const [step, setStep] = useState("address")
   const [loading, setLoading] = useState(false)
 
   const [address, setAddress] = useState<Address>({
-    _id: "",
+    id: "",
     label: "Home",
     address: "",
     city: "",
@@ -46,15 +48,40 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () =>{
     setLoading(true)
-    navigate("/orders")
+    try {
+      const orderData = {
+        items: items.map((item)=>({
+          product: item.product.id,
+          quantity: item.quantity,
+        })),
+        shippingAddress: address,
+        paymentMethod
+      }
+
+      const { data } = await api.post('/orders', orderData )
+      console.log(data)
+
+      if(data.url){
+        window.location.href = data.url;
+        return;
+      }
+      clearCart()
+      toast.success("Order placed successfully!");
+      navigate(`/orders/${data.order.id}`)
+    } catch (error : any) {
+      toast.error(error.response?.data?.message || error.message);
+    }finally{
+      setLoading(false);
+      scrollTo(0, 0);
+    }
   }
 
-  // Populate address from users default address
-  useState(()=>{
+  // Populate address from user's default address
+  useEffect(()=>{
     if(user?.addresses?.length){
       const defaultAddr = user.addresses.find((a)=>a.isDefault) || user.addresses[0]
       setAddress({
-        _id: defaultAddr?._id,
+        id: defaultAddr?.id,
         label: defaultAddr?.label,
         address: defaultAddr?.address,
         city: defaultAddr?.city,
@@ -65,7 +92,7 @@ const Checkout = () => {
         lng: defaultAddr?.lng,
       })
     }
-  })
+  }, [user])
 
   if(items.length === 0){
     return (
@@ -74,7 +101,7 @@ const Checkout = () => {
           <h2 className="text-xl font-semibold text-app-green mb-2">Your cart is empty</h2>
           <p className="text-sm text-app-text-light mb-4">Add some products to checkout</p>
           <button onClick={()=> navigate('/products')} className="px-5 py-2.5
-          bg-app-green text-white text-sm font-medium rounded-xl hover: bg-app-green-light transition-colors">
+          bg-app-green text-white text-sm font-medium rounded-xl hover:bg-app-green-light transition-colors">
             Browse Products
           </button>
 

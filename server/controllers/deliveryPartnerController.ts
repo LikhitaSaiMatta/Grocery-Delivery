@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
-import { timeStamp } from "console";
 
 
 const generateToken = (id: string)=>{
@@ -50,7 +49,7 @@ export const getMyDeliveries = async (req: Request, res: Response) => {
     const where: any = {deliveryPartnerId: req.partner!.id};
 
     if(status === "active"){
-        where.status = {in: ["Assigned", "Packed", "Out for delivery"]}
+        where.status = {in: ["Assigned", "Packed", "Out for Delivery"]}
     } else if(status === "completed"){
         where.status = {in: ["Delivered", "Cancelled"]}
     }

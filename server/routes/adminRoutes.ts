@@ -9,6 +9,6 @@ adminRouter.get('/stats', auth, admin, getAdminStatus)
 adminRouter.get('/delivery-partners', auth, admin, getDeliveryPartner)
 adminRouter.post('/delivery-partners', auth, admin, createDeliveryPartner)
 adminRouter.put('/delivery-partners/:id', auth, admin, updateDeliveryPartner)
-adminRouter.put('/order/:id/assign', auth, admin, assignDeliveryPartner)
+adminRouter.put('/orders/:id/assign', auth, admin, assignDeliveryPartner)
 
 export default adminRouter

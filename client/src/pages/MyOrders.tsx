@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import type { Order } from "../types";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { dummyDashboardOrdersData, statusColors } from "../assets/assets";
-import { CalendarIcon, ChevronRightIcon, Lightbulb, PackageIcon } from "lucide-react";
+import { CalendarIcon, ChevronRightIcon, PackageIcon } from "lucide-react";
 import Loading from "../components/Loading";
+import api from "../config/api";
+import toast from "react-hot-toast";
+import { statusColors } from "../assets/assets";
 
 const MyOrders = () => {
 
@@ -20,8 +22,16 @@ const MyOrders = () => {
   const {clearCart} = useCart()
 
   const fetchOrders = async () =>{
-    setOrders(dummyDashboardOrdersData as any)
-    setLoading(false)
+    setLoading(true)
+    try {
+      const params = activeTab !== "all" ? `?status=${activeTab}` : "";
+      const { data } = await api.get(`/orders${params}`)
+      setOrders(data.orders)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error?.message);
+    }finally{
+      setLoading(false)
+    }
   }
 
   useEffect(()=>{
@@ -71,7 +81,7 @@ const MyOrders = () => {
           ) : (
             <div className="space-y-4">
               {orders.map((order)=>(
-                <Link key={order._id} to={`/orders/${order._id}`}
+                <Link key={order.id} to={`/orders/${order.id}`}
                 className="block max-w-4xl bg-white rounded-2xl p-5 hover:shadow
                 transition-all">
                   {/* order id, date & status */}
@@ -79,7 +89,7 @@ const MyOrders = () => {
                     {/* left */}
                     <div>
                       <p className="text-sm font-medium text-app-green">
-                        Order #{order._id.slice(-8).toUpperCase()}</p>
+                        Order #{order.id.slice(-8).toUpperCase()}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <CalendarIcon className="size-3 text-app-text-light"/>
                           <span className="text-xs text-app-text-light">{new Date

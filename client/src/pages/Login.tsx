@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import { heroSectionData } from "../assets/assets"
 import { Link } from "react-router-dom"
 import { BikeIcon, Loader2Icon, LockIcon, MailIcon, UserIcon } from "lucide-react"
+import toast from "react-hot-toast"
+import { useAuth } from "../context/authContext"
 
 const Login = () => {
     const [isLoginState, setIsLoginState] = useState(true)
@@ -10,10 +12,22 @@ const Login = () => {
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>)=>{
+    const {login, register} = useAuth()
+
+    const handleSubmit = async (e: React.SubmitEvent)=>{
         e.preventDefault()
         setLoading(true);
-        setTimeout(()=> window.location.href = "/", 1000)
+        try {
+            if(isLoginState){
+                await login(email, password)
+            } else {
+                await register(name, email, password)
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || error?.message);
+        }finally{
+            setLoading(false)
+        }
     }
 
 
@@ -87,7 +101,7 @@ const Login = () => {
                             <LockIcon className="absolute left-3.5 top-1/2
                             -translate-y-1/2 size-4 text-app-text-light" />
                             <input
-                            type="email"
+                            type="password"
                             value={password} 
                             onChange={(e)=>setPassword(e.target.value)}
                             required
